@@ -7,7 +7,7 @@ A blazing fast, Next.js powered status dashboard for the SmoothSend infrastructu
 This application is designed to be hosted natively on **Vercel** and utilizes **Vercel KV (Serverless Redis)** for database persistence.
 
 1. **Frontend & UI**: Built with Next.js 14, TailwindCSS, and Lucide React. Based largely on standard atlassian statuspage layouts with rich dark-mode theming.
-2. **Cron Job (`/api/cron`)**: Vercel routinely pings this endpoint every 10 minutes. This endpoint probes the live production endpoints of the 4 SmoothSend services, evaluates their responsiveness, and logs their status (Operational, Degraded, or Outage) securely into the Vercel KV Redis database.
+2. **Cron Job (`/api/cron`)**: Vercel routinely pings this endpoint once per day (Midnight UTC) on the free Hobby tier. This endpoint probes the live production endpoints of the 4 SmoothSend services, evaluates their responsiveness, and logs their status (Operational, Degraded, or Outage) securely into the Vercel KV Redis database.
 3. **Status API (`/api/status`)**: When a user loads the status page, this endpoint retrieves the past 90 days of daily aggregates from the KV database, merges it with a live real-time ping for the current day, and serves it to the frontend.
 4. **Resiliency**: If the KV database is not configured or offline, the API automatically falls back to gracefully returning purely live stateless ping results to keep the dashboard visually unbroken.
 
@@ -23,7 +23,7 @@ This application is designed to be hosted natively on **Vercel** and utilizes **
    - `CRON_SECRET=your_secure_randomly_generated_string`
    - Vercel automatically sends this secret via an authorization header when hitting `/api/cron` to ensure external actors cannot spam database write requests.
 5. **Deploy**: Trigger a new deployment so Vercel can ingest the updated environment variables.
-6. **Verify Data Flow**: The local `vercel.json` ensures the cron job begins firing immediately every 10 minutes. Give it 20 minutes and the UI will begin securely painting historical data blocks!
+6. **Verify Data Flow**: The local `vercel.json` ensures the cron job begins firing automatically (Scheduled for Midnight UTC `0 0 * * *` by default to comply with Vercel's Free Tier limits). To test it immediately without waiting for midnight, you can manually trigger the `/api/cron` endpoint from your Vercel Dashboard -> Settings -> Cron Jobs -> "Run". The UI will then begin securely painting historical data blocks!
 
 ## Local Development Requirements
 To run locally, copy `.env.example` to `.env.local` and substitute your Vercel KV REST URL variables:
