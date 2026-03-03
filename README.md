@@ -30,5 +30,4 @@ To run locally, copy `.env.example` to `.env.local` and substitute your Vercel K
 ```bash
 npm install
 npm run dev
-```
-# status-page
+
