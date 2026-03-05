@@ -6,6 +6,19 @@ const kv = Redis.fromEnv();
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+interface Service {
+    id: string;
+    name: string;
+    url: string;
+    description: string;
+}
+
+interface Ping {
+    timestamp: string;
+    status: string;
+    latency: number;
+}
+
 const SERVICES = [
     {
         id: 'gateway',
@@ -67,8 +80,9 @@ export async function GET() {
                 statusCode = 500;
             }
 
-            // Fetch daily history from Vercel KV
+            // Fetch daily history and recent pings from Vercel KV
             let history: string[] = [];
+            let pings: Ping[] = [];
             try {
                 // If KV isn't configured yet, this will fail gracefully
                 const multi = kv.pipeline();
@@ -76,7 +90,16 @@ export async function GET() {
                     multi.get(`daily:${service.id}:${date}`);
                 });
 
+                // Fetch the last 60 pings (approx 5 hours of data if 5m interval)
+                multi.lrange(`pings:${service.id}`, 0, 59);
+
                 const kvResults = await multi.exec();
+
+                // Extract pings (last item in results array)
+                const rawPings = kvResults.pop() as string[] | null;
+                if (rawPings) {
+                    pings = rawPings.map(p => JSON.parse(p)).reverse();
+                }
 
                 // Map the DB history. If a day has no data, default to operational
                 history = kvResults.map((h: unknown, i: number) => {
@@ -95,7 +118,8 @@ export async function GET() {
                 status: liveStatus,
                 latency,
                 statusCode,
-                history
+                history,
+                pings
             };
         })
     );
