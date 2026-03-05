@@ -11,6 +11,7 @@ interface Service {
     description: string;
     status: ServiceStatus;
     latency: number;
+    history: ServiceStatus[];
 }
 
 interface StatusData {
@@ -18,12 +19,6 @@ interface StatusData {
     services: Service[];
     overall: ServiceStatus;
 }
-
-// Generate a 90-day mock history for a given current status
-const generateHistory = (currentStatus: ServiceStatus) => {
-    const days = 90;
-    return Array(days).fill(currentStatus);
-};
 
 // Math to get uptime percentage
 const getUptimePercentage = (history: ServiceStatus[]) => {
@@ -78,8 +73,10 @@ export function StatusDashboard() {
     const testnetServices = data.services.filter(s => s.id === 'evm-relayer' || s.id === 'stellar-relayer');
 
     const renderServiceRow = (service: Service, index: number) => {
-        // Pseudo-random deterministic history for visual flair
-        const history = generateHistory(service.status);
+        // Use real history from API; fall back to repeating current status if missing
+        const history: ServiceStatus[] = (service.history?.length === 90)
+            ? service.history as ServiceStatus[]
+            : Array(90).fill(service.status);
         const uptimeStr = getUptimePercentage(history);
 
         return (
@@ -145,7 +142,7 @@ export function StatusDashboard() {
                     {isRefreshing ? 'Refreshing...' : 'Refresh Status'}
                 </button>
                 <span className="text-[14px] text-[#A1A1AA]">
-                    Uptime over the past 90 days. <a href="#" className="text-[#0066FF] hover:underline">View historical uptime.</a>
+                    Uptime over the past 90 days.
                 </span>
             </div>
 
