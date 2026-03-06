@@ -6,6 +6,10 @@ const kv = Redis.fromEnv();
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// In-memory cache to avoid hammering Upstash on every request
+let cachedResponse: { data: any; expires: number } | null = null;
+const CACHE_TTL_MS = 60_000; // 60 seconds
+
 interface Service {
     id: string;
     name: string;
@@ -47,6 +51,11 @@ const SERVICES = [
 ];
 
 export async function GET() {
+    // Serve from cache if fresh (avoids ~364 Redis commands per request)
+    if (cachedResponse && Date.now() < cachedResponse.expires) {
+        return NextResponse.json(cachedResponse.data);
+    }
+
     // Generate dates for the past 90 days to query KV
     const today = new Date();
     const past90Days = Array.from({ length: 90 }, (_, i) => {
@@ -137,11 +146,16 @@ export async function GET() {
         };
     });
 
-    return NextResponse.json({
+    const responseData = {
         timestamp: new Date().toISOString(),
         services: statuses,
         overall: statuses.some(s => s.status === 'major_outage') ? 'major_outage' :
             statuses.some(s => s.status === 'degraded_performance') ? 'degraded_performance' :
                 'operational'
-    });
+    };
+
+    // Cache the response for 60s
+    cachedResponse = { data: responseData, expires: Date.now() + CACHE_TTL_MS };
+
+    return NextResponse.json(responseData);
 }

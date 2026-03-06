@@ -38,7 +38,7 @@ export function StatusDashboard() {
     const [data, setData] = useState<StatusData | null>(null);
     const [isMainnetOpen, setIsMainnetOpen] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [refreshCountdown, setRefreshCountdown] = useState(30);
+    const [refreshCountdown, setRefreshCountdown] = useState(300);
 
     // Announcement Configuration - Toggle 'active' to show a banner
     const announcement = {
@@ -72,7 +72,7 @@ export function StatusDashboard() {
             setRefreshCountdown(prev => {
                 if (prev <= 1) {
                     fetchStatus();
-                    return 30; // Reset after fetch
+                    return 300; // Reset after fetch (5 minutes)
                 }
                 return prev - 1;
             });
