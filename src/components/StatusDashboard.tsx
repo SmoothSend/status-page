@@ -97,7 +97,7 @@ export function StatusDashboard() {
         // Use real history from API; fall back to repeating current status if missing
         const history: ServiceStatus[] = (service.history?.length === 90)
             ? service.history as ServiceStatus[]
-            : Array(90).fill(service.status);
+            : [...Array(89).fill('operational' as ServiceStatus), service.status];
         const uptimeStr = getUptimePercentage(history);
 
         return (

@@ -118,8 +118,8 @@ export async function GET() {
                     return (h as string) || 'operational';
                 });
             } catch (kvError) {
-                // Fallback if KV doesn't exist: fill with live status
-                history = Array(90).fill(liveStatus);
+                // KV unavailable: assume past days were fine, only today reflects live status
+                history = [...Array(89).fill('operational'), liveStatus];
             }
 
             return {
